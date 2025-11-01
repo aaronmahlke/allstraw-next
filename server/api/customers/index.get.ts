@@ -5,11 +5,16 @@ export default defineEventHandler(async (event) => {
   const { secure } = await requireUserSession(event)
   if (!secure) throw createError({ statusCode: 401, statusMessage: "Unauthorized" })
 
-  let userList
+  // Only sales and admin can access customers
+  if (secure.role === "customer") {
+    throw createError({ statusCode: 403, statusMessage: "Access denied" })
+  }
+
+  let customerList
 
   if (secure.role === "admin") {
-    // Admins can see all users in their organization
-    userList = await useDrizzle()
+    // Admins can see all customers in their organization
+    customerList = await useDrizzle()
       .select({
         id: users.id,
         name: users.name,
@@ -23,11 +28,16 @@ export default defineEventHandler(async (event) => {
         updatedAt: users.updatedAt
       })
       .from(users)
-      .where(eq(users.organisationId, secure.organisationId))
+      .where(
+        and(
+          eq(users.organisationId, secure.organisationId),
+          eq(users.role, "customer")
+        )
+      )
       .orderBy(users.name)
   } else if (secure.role === "sales") {
     // Sales reps can only see customers they created
-    userList = await useDrizzle()
+    customerList = await useDrizzle()
       .select({
         id: users.id,
         name: users.name,
@@ -53,5 +63,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: "Access denied" })
   }
 
-  return { users: userList }
+  return { customers: customerList }
 })

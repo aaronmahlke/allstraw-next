@@ -1,43 +1,36 @@
 import { users } from "~~/server/database/schema"
 import { z } from "zod"
 
-const createUserSchema = z.object({
+const createCustomerSchema = z.object({
   name: z.string().min(1, "Name is required"),
   surname: z.string().optional(),
   email: z.string().email("Invalid email format"),
   phone: z.string().optional(),
-  role: z.enum(["admin", "sales", "customer"])
+  companyId: z.string().uuid().nullable().optional()
 })
 
 export default defineEventHandler(async (event) => {
   const { secure } = await requireUserSession(event)
   if (!secure) throw createError({ statusCode: 401, statusMessage: "Unauthorized" })
 
-  // Role-based permissions
+  // Only sales and admin can create customers
   if (secure.role === "customer") {
     throw createError({ statusCode: 403, statusMessage: "Access denied" })
   }
 
   const body = await readBody(event)
-  const validatedData = createUserSchema.parse(body)
-
-  // Additional role restrictions
-  if (secure.role === "sales" && validatedData.role !== "customer") {
-    throw createError({
-      statusCode: 403,
-      statusMessage: "Sales representatives can only create customers"
-    })
-  }
+  const validatedData = createCustomerSchema.parse(body)
 
   try {
-    const [newUser] = await useDrizzle()
+    const [newCustomer] = await useDrizzle()
       .insert(users)
       .values({
         name: validatedData.name,
         surname: validatedData.surname,
         email: validatedData.email,
         phone: validatedData.phone,
-        role: validatedData.role,
+        role: "customer", // Always customer
+        companyId: validatedData.companyId,
         organisationId: secure.organisationId,
         createdBySalesId: secure.role === "sales" ? secure.userId : undefined
       })
@@ -52,17 +45,17 @@ export default defineEventHandler(async (event) => {
         createdAt: users.createdAt
       })
 
-    return { user: newUser }
+    return { customer: newCustomer }
   } catch (error: any) {
     if (error.code === "23505" && error.constraint?.includes("email")) {
       throw createError({
         statusCode: 400,
-        statusMessage: "A user with this email already exists"
+        statusMessage: "A customer with this email already exists"
       })
     }
     throw createError({
       statusCode: 500,
-      statusMessage: "Failed to create user"
+      statusMessage: "Failed to create customer"
     })
   }
 })

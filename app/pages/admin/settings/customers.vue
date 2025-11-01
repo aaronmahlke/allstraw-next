@@ -6,7 +6,21 @@ definePageMeta({ layout: "admin" })
 
 const { toast } = useToast()
 
-const { data: users, refresh } = await useFetch<{ users: DUser[] }>("/api/users")
+const { data: customers, refresh } = await useFetch<{ customers: DUser[] }>("/api/customers")
+const { data: companiesData } = await useFetch<{ companies: DCompany[] }>("/api/companies")
+
+const companiesMap = computed(() => {
+  const map = new Map<string, string>()
+  if (companiesData.value?.companies) {
+    companiesData.value.companies.forEach((company) => {
+      map.set(company.id, company.name)
+    })
+  }
+  return map
+})
+
+// Only show customer users (already filtered on backend)
+const customerList = computed(() => customers.value?.customers || [])
 
 const isModalOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
@@ -20,18 +34,8 @@ const formData = ref({
   email: "",
   phone: "",
   role: "customer",
-  companyId: "NONE"
+  companyId: null
 })
-
-const companyOptions = ref<{ label: string; value: string }[]>([
-  { label: "No company", value: "NONE" },
-  { label: "ABC Corp", value: "abc-corp" },
-  { label: "XYZ Ltd", value: "xyz-ltd" },
-  { label: "Tech Solutions Inc", value: "tech-solutions" }
-])
-
-// Only show customer users
-const customers = computed(() => users.value?.users.filter((u) => u.role === "customer") || [])
 
 function openCreateModal() {
   formData.value = {
@@ -40,7 +44,7 @@ function openCreateModal() {
     email: "",
     phone: "",
     role: "customer",
-    companyId: "NONE"
+    companyId: null
   }
   editingId.value = null
   isModalOpen.value = true
@@ -53,7 +57,7 @@ function openEditModal(customer: DUser) {
     email: customer.email,
     phone: customer.phone || "",
     role: customer.role,
-    companyId: customer.companyId || "NONE"
+    companyId: customer.companyId
   }
   editingId.value = customer.id
   isModalOpen.value = true
@@ -68,7 +72,7 @@ function closeModal() {
     email: "",
     phone: "",
     role: "customer",
-    companyId: "NONE"
+    companyId: null
   }
 }
 
@@ -116,11 +120,11 @@ async function saveCustomer() {
       email: formData.value.email,
       phone: formData.value.phone,
       role: formData.value.role,
-      companyId: formData.value.companyId === "NONE" ? null : formData.value.companyId
+      companyId: formData.value.companyId
     }
 
     if (editingId.value) {
-      await $fetch(`/api/users/${editingId.value}`, {
+      await $fetch(`/api/customers/${editingId.value}`, {
         method: "PUT",
         body: userData
       })
@@ -129,7 +133,7 @@ async function saveCustomer() {
         description: `${formData.value.name} has been updated successfully`
       })
     } else {
-      await $fetch("/api/users", {
+      await $fetch("/api/customers", {
         method: "POST",
         body: userData
       })
@@ -156,7 +160,7 @@ async function confirmDelete() {
   if (!customerToDelete.value) return
 
   try {
-    await $fetch(`/api/users/${customerToDelete.value.id}`, {
+    await $fetch(`/api/customers/${customerToDelete.value.id}`, {
       method: "DELETE"
     })
     toast.success({
@@ -174,33 +178,6 @@ async function confirmDelete() {
     closeDeleteDialog()
   }
 }
-
-async function loadCompanies() {
-  try {
-    const { companies } = await $fetch<{ companies: DCompany[] }>("/api/companies")
-    companyOptions.value = [
-      { label: "No company", value: "NONE" },
-      { label: "ABC Corp", value: "abc-corp" },
-      { label: "XYZ Ltd", value: "xyz-ltd" },
-      { label: "Tech Solutions Inc", value: "tech-solutions" },
-      ...companies.map((company) => ({
-        label: company.name,
-        value: company.id
-      }))
-    ]
-  } catch (error) {
-    console.error("Error loading companies:", error)
-  }
-}
-
-function handleCompanySelection(value: string) {
-  formData.value.companyId = value
-}
-
-// Load companies on mount (commented out for testing)
-// onMounted(() => {
-//   loadCompanies()
-// })
 </script>
 
 <template>
@@ -220,9 +197,9 @@ function handleCompanySelection(value: string) {
       </DButton>
     </div>
 
-    <DList v-if="customers.length > 0">
+    <DList v-if="customerList.length > 0">
       <DListItem
-        v-for="customer in customers"
+        v-for="customer in customerList"
         :key="customer.id"
       >
         <div class="flex w-full items-center justify-between">
@@ -233,6 +210,12 @@ function handleCompanySelection(value: string) {
             <div class="text-copy-sm text-neutral-subtle flex items-center gap-4">
               <p>{{ customer.email }}</p>
               <p v-if="customer.phone">{{ customer.phone }}</p>
+              <p
+                v-if="customer.companyId"
+                class="text-blue-600"
+              >
+                {{ companiesMap.get(customer.companyId) || "Unknown Company" }}
+              </p>
             </div>
           </div>
 
@@ -272,11 +255,9 @@ function handleCompanySelection(value: string) {
       <div class="space-y-4 p-6">
         <DFormGroup>
           <DFormLabel name="company">Company</DFormLabel>
-          <DCombobox
-            :model-value="formData.companyId"
-            @update:model-value="handleCompanySelection"
-            :items="companyOptions"
-            placeholder="Select company (optional)"
+          <DCompanyCombobox
+            v-model="formData.companyId"
+            :disabled="isSubmitting"
           />
         </DFormGroup>
 
