@@ -3,9 +3,10 @@ import { eq, and } from "drizzle-orm"
 
 export default defineEventHandler(async (event) => {
   const { secure } = await requireUserSession(event)
+  console.log("Product GET - secure:", secure)
   if (!secure) throw createError({ statusCode: 401, statusMessage: "Unauthorized" })
 
-  const productId = getRouterParam(event, 'id')
+  const productId = getRouterParam(event, "id")
   if (!productId) {
     throw createError({ statusCode: 400, statusMessage: "Product ID is required" })
   }
@@ -28,10 +29,16 @@ export default defineEventHandler(async (event) => {
     })
     .from(products)
     .leftJoin(carriers, eq(carriers.id, products.carrierId))
-    .where(and(
-      eq(products.id, productId),
-      eq(products.organisationId, secure.organisationId)
-    ))
+    .where(and(eq(products.id, productId), eq(products.organisationId, secure.organisationId)))
+
+  console.log(
+    "Product GET - productId:",
+    productId,
+    "orgId:",
+    secure.organisationId,
+    "found:",
+    !!product
+  )
 
   if (!product) {
     throw createError({ statusCode: 404, statusMessage: "Product not found" })

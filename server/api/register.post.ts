@@ -1,52 +1,51 @@
-import { z } from "zod";
-import { organisations, users } from "../database/schema";
+import { z } from "zod"
+import { eq } from "drizzle-orm"
+import { organisations, users } from "../database/schema"
 
 const bodySchema = z.object({
-    name: z.string(),
-    email: z.string().email(),
-    password: z.string().min(8),
-    organisationName: z.string(),
-});
+  name: z.string(),
+  email: z.string().email(),
+  password: z.string().min(8),
+  organisationName: z.string()
+})
 
 export default defineEventHandler(async (event) => {
-    try {
-        const body = await readValidatedBody(event, bodySchema.parse);
+  const body = await readValidatedBody(event, bodySchema.parse)
 
-        // check if the user already exists
-        const existing = await useDrizzle()
-            .select()
-            .from(users)
-            .where(eq(users.email, body.email));
-        if (existing.length > 0) return {};
+  // check if the user already exists
+  const existing = await useDrizzle().select().from(users).where(eq(users.email, body.email))
 
-        // Create organisation
-        const createdOrgs = await useDrizzle()
-            .insert(organisations)
-            .values({
-                name: body.organisationName,
-            })
-            .returning();
+  if (existing.length > 0) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "User already exists"
+    })
+  }
 
-        const org = createdOrgs[0];
+  // Create organisation
+  const createdOrgs = await useDrizzle()
+    .insert(organisations)
+    .values({
+      name: body.organisationName
+    })
+    .returning()
 
-        const hashedPassword = await hashPassword(body.password);
+  const org = createdOrgs[0]
 
-        const user = await useDrizzle()
-            .insert(users)
-            .values({
-                name: body.name,
-                email: body.email,
-                password: hashedPassword,
-                role: "admin",
-                organisationId: org.id,
-            })
-            .returning();
+  const hashedPassword = await hashPassword(body.password)
 
-        // TODO: log in the user immediately
+  const user = await useDrizzle()
+    .insert(users)
+    .values({
+      name: body.name,
+      email: body.email,
+      password: hashedPassword,
+      role: "admin",
+      organisationId: org.id
+    })
+    .returning()
 
-        return {};
-    } catch (error) {
-        console.error(error);
-        return {};
-    }
-});
+  // TODO: log in the user immediately
+
+  return { success: true }
+})

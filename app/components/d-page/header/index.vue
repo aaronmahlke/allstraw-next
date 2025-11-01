@@ -5,13 +5,15 @@ type Props = {
 }
 const { navigation } = defineProps<Props>()
 
-const productId = useRouteParams<string>("id")
+const route = useRoute()
+const productId = computed(() => route.params.id as string)
 
-const product = ref()
-if (productId.value) {
-  let { data } = await useFetch(`/api/products/${productId.value}`)
-  product.value = data.value
-}
+const { data: product } = await useLazyFetch(
+  () => (productId.value ? `/api/products/${productId.value}` : null),
+  {
+    key: () => (productId.value ? `product-${productId.value}` : null)
+  }
+)
 
 const { data: me } = await useFetch(`/api/me`)
 
@@ -37,11 +39,11 @@ const initials = computed(() => {
           :name="me?.organisationName as string"
           to="/admin/products"
         />
-        <template v-if="productId && product">
+        <template v-if="productId && product?.product">
           <DPageHeaderSeparator />
           <DPageHeaderBreadcrumbLink
-            :name="product.name"
-            :to="`/admin/products/${product.id}`"
+            :name="product.product.name"
+            :to="`/admin/products/${product.product.id}`"
           />
         </template>
       </div>

@@ -1,56 +1,48 @@
 <script setup lang="ts">
 import { LoaderCircleIcon } from "lucide-vue-next"
-import { RouterLink } from "vue-router"
+import { NuxtLink } from "#components"
+import { refDebounced } from "@vueuse/core"
 
 const slots = useSlots()
 
-interface Props {
-  variant?: "primary" | "secondary" | "danger" | "danger-light" | "transparent" | "outline"
-  iconLeft?: Component
-  to?: any
-  size?: "xs" | "sm" | "md" | "lg"
+type Props = {
+  variant?: "primary" | "secondary" | "transparent"
+  leadingIcon?: Component
+  trailingIcon?: Component
+  to?: "string"
+  size?: "xs" | "sm" | "md"
   type?: "submit" | "button"
   loading?: boolean
   disabled?: boolean
 }
 
-const { variant = "primary", size = "lg", type = "button", loading = false } = defineProps<Props>()
+const props = defineProps<Props>()
+const { variant = "primary", size = "md", type = "button", loading = false } = props
 
 const variantClasses: { [key: string]: string } = {
-  primary:
-    "bg-neutral-inverse text-neutral-inverse hover:bg-neutral-inverse-hover hover:shadow-button hover:inset-shadow-sm hover:inset-shadow-white/20 active:inset-shadow active:inset-shadow-black/30",
+  primary: "bg-surface text-neutral hover:bg-surface-subtle border border-neutral shadow-xs",
   secondary:
-    "text-neutral border border-neutral hover:bg-neutral-weak hover:shadow-button active:inset-shadow bg-neutral",
-  danger:
-    "bg-danger text-danger-onsurface hover:bg-danger-hover hover:shadow-button hover:inset-shadow-sm active:inset-shadow active:inset-shadow-black/30",
-  "danger-light":
-    "bg-danger-subtle text-danger   hover:shadow-button hover:inset-shadow-sm active:inset-shadow active:inset-shadow-black/30",
-  success:
-    "bg-success text-success-onsurface hover:bg-success-hover active:inset-shadow-sm active:inset-shadow-black/10 active:bg-success-strong",
-  warning:
-    "bg-warn text-warn-onsurface hover:bg-warn-hover active:inset-shadow-sm active:inset-shadow-black/10 active:bg-warn-strong",
-  transparent: "text-neutral hover:bg-neutral-strong/10 active:inset-shadow"
+    "bg-neutral-subtle text-neutral hover:bg-neutral-strong active:bg-neutral border border-transparent",
+  transparent:
+    "text-neutral-700 hover:bg-neutral-subtle active:bg-neutral-strong border border-transparent"
 }
 
 const paddingClasses: { [key: string]: string } = {
   xs: "px-2",
   sm: "px-3",
-  md: "px-3",
-  lg: "px-4"
+  md: "px-3"
 }
 
 const heightClasses: { [key: string]: string } = {
   xs: "h-6",
   sm: "h-7",
-  md: "h-8",
-  lg: "h-9"
+  md: "h-8"
 }
 
 const widthClasses: { [key: string]: string } = {
   xs: "w-5",
   sm: "w-7",
-  md: "w-8",
-  lg: "w-9"
+  md: "w-8"
 }
 
 const sizeClass = computed(() => {
@@ -60,34 +52,42 @@ const sizeClass = computed(() => {
     return [heightClasses[size], widthClasses[size]]
   }
 })
+
+const isLoading = refDebounced(toRef(props, "loading"), 100)
 </script>
 
 <template>
   <component
-    :is="to ? RouterLink : 'button'"
+    :is="to ? NuxtLink : 'button'"
     :type
     :to
-    class="relative inline-flex cursor-default items-center justify-center gap-2 rounded-lg text-sm text-nowrap ring-blue-600 outline-none select-none focus-visible:ring-2 focus-visible:ring-offset-2"
+    class="relative flex shrink-0 cursor-default items-center justify-center gap-2 rounded-lg text-sm whitespace-pre ring-blue-600 outline-none select-none focus-visible:ring-2 focus-visible:ring-offset-2"
     :class="[sizeClass, variantClasses[variant], disabled ? 'pointer-events-none opacity-50' : '']"
     :disabled
   >
-    <component
-      v-if="iconLeft"
-      :is="iconLeft"
-      class="size-4"
-    />
-    <slot name="leading" />
-    <div
-      v-if="$slots.default"
-      class="inline"
-      :class="{ 'opacity-0': loading }"
-    >
-      <slot />
+    <div :class="{ 'opacity-0': isLoading }">
+      <component
+        v-if="leadingIcon"
+        :is="leadingIcon"
+        class="size-4"
+      />
+      <slot name="leading"></slot>
+      <div
+        v-if="$slots.default"
+        class="inline"
+      >
+        <slot></slot>
+      </div>
+      <slot name="trailing"></slot>
+      <component
+        v-if="trailingIcon"
+        :is="trailingIcon"
+        class="size-4"
+      />
     </div>
-    <slot name="trailing" />
     <div
-      v-if="loading"
-      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform"
+      v-if="isLoading"
+      class="absolute inset-0 grid place-items-center"
     >
       <LoaderCircleIcon class="size-5 animate-spin" />
     </div>
