@@ -15,6 +15,10 @@ definePageMeta({ layout: "admin" })
           name="Users"
           to="/admin/settings/users"
         />
+        <DSettingsNavigationLink
+          name="Customers"
+          to="/admin/settings/customers"
+        />
       </nav>
       <div class="flex-grow">
         <NuxtPage />

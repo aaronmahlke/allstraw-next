@@ -11,7 +11,7 @@ const { color = "blue" } = defineProps<Props>()
 
 <template>
   <div
-    class="flex items-center justify-between rounded-md px-2 py-0.5 text-sm"
+    class="inline-flex items-center rounded-md px-2 py-0.5 text-sm"
     :class="`bg-${color}-100 text-${color}-800`"
   >
     <slot></slot>

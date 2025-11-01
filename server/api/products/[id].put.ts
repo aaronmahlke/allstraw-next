@@ -8,21 +8,30 @@ const updateProductSchema = z.object({
   baseUnit: z.enum(["cm", "m", "piece"]),
   basePrice: z.number().int().positive(),
   minOrderQuantity: z.number().int().positive().default(1),
-  width: z.object({
-    min: z.number(),
-    max: z.number(),
-    step: z.number()
-  }).nullable().optional(),
-  height: z.object({
-    min: z.number(),
-    max: z.number(),
-    step: z.number()
-  }).nullable().optional(),
-  depth: z.object({
-    min: z.number(),
-    max: z.number(),
-    step: z.number()
-  }).nullable().optional(),
+  width: z
+    .object({
+      min: z.number(),
+      max: z.number(),
+      step: z.number()
+    })
+    .nullable()
+    .optional(),
+  height: z
+    .object({
+      min: z.number(),
+      max: z.number(),
+      step: z.number()
+    })
+    .nullable()
+    .optional(),
+  depth: z
+    .object({
+      min: z.number(),
+      max: z.number(),
+      step: z.number()
+    })
+    .nullable()
+    .optional(),
   shippingPricePerUnit: z.number().int().nullable().optional(),
   carrierId: z.string().uuid().nullable().optional()
 })
@@ -47,10 +56,7 @@ export default defineEventHandler(async (event) => {
   const [existingProduct] = await useDrizzle()
     .select({ id: products.id })
     .from(products)
-    .where(and(
-      eq(products.id, productId),
-      eq(products.organisationId, secure.organisationId)
-    ))
+    .where(and(eq(products.id, productId), eq(products.organisationId, secure.organisationId)))
 
   if (!existingProduct) {
     throw createError({ statusCode: 404, statusMessage: "Product not found" })

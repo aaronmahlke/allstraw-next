@@ -37,13 +37,13 @@ const paddingClasses: { [key: string]: string } = {
 const heightClasses: { [key: string]: string } = {
   xs: "h-6",
   sm: "h-7",
-  md: "h-8"
+  md: "h-9"
 }
 
 const widthClasses: { [key: string]: string } = {
   xs: "w-5",
   sm: "w-7",
-  md: "w-8"
+  md: "w-9"
 }
 
 const sizeClass = computed(() => {
