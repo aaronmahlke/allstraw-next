@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const mainNavigation = [
   { name: "Products", to: "/admin/products" },
-  { name: "Settings", to: "/admin/settings/general" }
+  { name: "Settings", to: "/admin/settings/carriers" }
 ]
 </script>
 

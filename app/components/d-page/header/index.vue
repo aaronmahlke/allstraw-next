@@ -29,7 +29,7 @@ const initials = computed(() => {
     <div class="flex items-center justify-between px-6 py-3">
       <div class="flex items-center gap-2">
         <NuxtLink
-          :to="`/products`"
+          :to="`/admin/products`"
           class="flex flex-shrink-0 items-center gap-2"
         >
           <d-logo class="size-7" />
