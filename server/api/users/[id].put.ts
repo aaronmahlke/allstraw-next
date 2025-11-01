@@ -42,10 +42,7 @@ export default defineEventHandler(async (event) => {
       createdBySalesId: users.createdBySalesId
     })
     .from(users)
-    .where(and(
-      eq(users.id, userId),
-      eq(users.organisationId, secure.organisationId)
-    ))
+    .where(and(eq(users.id, userId), eq(users.organisationId, secure.organisationId)))
 
   if (!existingUser) {
     throw createError({ statusCode: 404, statusMessage: "User not found" })

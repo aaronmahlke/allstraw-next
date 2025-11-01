@@ -3,6 +3,7 @@ import type {
   users,
   products,
   carriers,
+  companies,
   offers,
   offerItems,
   orders,
@@ -19,6 +20,9 @@ export type DProduct = typeof products.$inferSelect
 export type DProductCreate = typeof products.$inferInsert
 
 export type DCarrier = typeof carriers.$inferSelect
+
+export type DCompany = typeof companies.$inferSelect
+export type DCompanyCreate = typeof companies.$inferInsert
 
 export type DOffer = typeof offers.$inferSelect
 export type DOfferItem = typeof offerItems.$inferSelect

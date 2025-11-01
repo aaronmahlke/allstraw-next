@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PlusIcon, TrashIcon } from "@heroicons/vue/16/solid"
-import type { DUser } from "~/types/models"
+import type { DUser, DCompany } from "~/types/models"
 
 definePageMeta({ layout: "admin" })
 
@@ -19,14 +19,29 @@ const formData = ref({
   surname: "",
   email: "",
   phone: "",
-  role: "customer"
+  role: "customer",
+  companyId: "NONE"
 })
+
+const companyOptions = ref<{ label: string; value: string }[]>([
+  { label: "No company", value: "NONE" },
+  { label: "ABC Corp", value: "abc-corp" },
+  { label: "XYZ Ltd", value: "xyz-ltd" },
+  { label: "Tech Solutions Inc", value: "tech-solutions" }
+])
 
 // Only show customer users
 const customers = computed(() => users.value?.users.filter((u) => u.role === "customer") || [])
 
 function openCreateModal() {
-  formData.value = { name: "", surname: "", email: "", phone: "", role: "customer" }
+  formData.value = {
+    name: "",
+    surname: "",
+    email: "",
+    phone: "",
+    role: "customer",
+    companyId: "NONE"
+  }
   editingId.value = null
   isModalOpen.value = true
 }
@@ -37,7 +52,8 @@ function openEditModal(customer: DUser) {
     surname: customer.surname || "",
     email: customer.email,
     phone: customer.phone || "",
-    role: customer.role
+    role: customer.role,
+    companyId: customer.companyId || "NONE"
   }
   editingId.value = customer.id
   isModalOpen.value = true
@@ -46,7 +62,14 @@ function openEditModal(customer: DUser) {
 function closeModal() {
   isModalOpen.value = false
   editingId.value = null
-  formData.value = { name: "", surname: "", email: "", phone: "", role: "customer" }
+  formData.value = {
+    name: "",
+    surname: "",
+    email: "",
+    phone: "",
+    role: "customer",
+    companyId: "NONE"
+  }
 }
 
 function openDeleteDialog(customer: DUser) {
@@ -87,10 +110,19 @@ async function saveCustomer() {
   isSubmitting.value = true
 
   try {
+    const userData = {
+      name: formData.value.name,
+      surname: formData.value.surname,
+      email: formData.value.email,
+      phone: formData.value.phone,
+      role: formData.value.role,
+      companyId: formData.value.companyId === "NONE" ? null : formData.value.companyId
+    }
+
     if (editingId.value) {
       await $fetch(`/api/users/${editingId.value}`, {
         method: "PUT",
-        body: formData.value
+        body: userData
       })
       toast.success({
         title: "Customer Updated",
@@ -99,7 +131,7 @@ async function saveCustomer() {
     } else {
       await $fetch("/api/users", {
         method: "POST",
-        body: formData.value
+        body: userData
       })
       toast.success({
         title: "Customer Created",
@@ -142,6 +174,33 @@ async function confirmDelete() {
     closeDeleteDialog()
   }
 }
+
+async function loadCompanies() {
+  try {
+    const { companies } = await $fetch<{ companies: DCompany[] }>("/api/companies")
+    companyOptions.value = [
+      { label: "No company", value: "NONE" },
+      { label: "ABC Corp", value: "abc-corp" },
+      { label: "XYZ Ltd", value: "xyz-ltd" },
+      { label: "Tech Solutions Inc", value: "tech-solutions" },
+      ...companies.map((company) => ({
+        label: company.name,
+        value: company.id
+      }))
+    ]
+  } catch (error) {
+    console.error("Error loading companies:", error)
+  }
+}
+
+function handleCompanySelection(value: string) {
+  formData.value.companyId = value
+}
+
+// Load companies on mount (commented out for testing)
+// onMounted(() => {
+//   loadCompanies()
+// })
 </script>
 
 <template>
@@ -168,7 +227,9 @@ async function confirmDelete() {
       >
         <div class="flex w-full items-center justify-between">
           <div>
-            <h3 class="text-copy-lg text-neutral-strong">{{ customer.name }} {{ customer.surname }}</h3>
+            <h3 class="text-copy-lg text-neutral-strong">
+              {{ customer.name }} {{ customer.surname }}
+            </h3>
             <div class="text-copy-sm text-neutral-subtle flex items-center gap-4">
               <p>{{ customer.email }}</p>
               <p v-if="customer.phone">{{ customer.phone }}</p>
@@ -209,6 +270,16 @@ async function confirmDelete() {
       @confirm="saveCustomer"
     >
       <div class="space-y-4 p-6">
+        <DFormGroup>
+          <DFormLabel name="company">Company</DFormLabel>
+          <DCombobox
+            :model-value="formData.companyId"
+            @update:model-value="handleCompanySelection"
+            :items="companyOptions"
+            placeholder="Select company (optional)"
+          />
+        </DFormGroup>
+
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <DFormGroup>
             <DFormLabel

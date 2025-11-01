@@ -8,7 +8,8 @@ import {
   ComboboxPortal,
   ComboboxRoot,
   ComboboxTrigger,
-  ComboboxViewport
+  ComboboxViewport,
+  FocusScope
 } from "reka-ui"
 
 import { ChevronUpDownIcon } from "@heroicons/vue/16/solid"
@@ -125,40 +126,45 @@ watch(open, (newOpen, oldOpen) => {
         class="bg-surface border-neutral text-neutral-strong data-[state=open]:animate-fade-in-from-top data-[state=closed]:animate-fade-out relative z-50 max-h-96 w-(--reka-combobox-trigger-width) overflow-hidden rounded-lg border shadow-md"
         position="popper"
       >
-        <ComboboxViewport class="p-0.5">
-          <ComboboxInput
-            v-model="searchTerm"
-            :display-value="() => ''"
-            class="text-copy text-neutral placeholder:text-neutral-weak flex h-8 w-full rounded-xl bg-transparent px-2 leading-none outline-none disabled:cursor-not-allowed disabled:opacity-50"
-            :placeholder="searchPlaceholder"
-          />
-          <ComboboxEmpty class="text-copy text-neutral-weak py-6 text-center">
-            {{ emptyText }}
-          </ComboboxEmpty>
-          <ComboboxGroup>
+        <FocusScope
+          asChild
+          trapped
+        >
+          <ComboboxViewport class="p-0.5">
+            <ComboboxInput
+              v-model="searchTerm"
+              :display-value="() => ''"
+              class="text-copy text-neutral placeholder:text-neutral-weak flex h-8 w-full rounded-xl bg-transparent px-2 leading-none outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              :placeholder="searchPlaceholder"
+            />
+            <ComboboxEmpty class="text-copy text-neutral-weak py-6 text-center">
+              {{ emptyText }}
+            </ComboboxEmpty>
+            <ComboboxGroup>
+              <slot
+                v-if="$slots.default"
+                :is-closing="isClosing"
+                :search-term="searchTerm"
+                :filtered-items="filteredItems"
+                :items="filteredItems"
+              />
+              <template v-else>
+                <DComboboxItem
+                  v-for="item in filteredItems"
+                  :key="item.value"
+                  :value="item.value"
+                  :label="item.label"
+                />
+              </template>
+            </ComboboxGroup>
             <slot
-              v-if="$slots.default"
+              name="footer"
               :is-closing="isClosing"
               :search-term="searchTerm"
               :filtered-items="filteredItems"
-              :items="filteredItems"
             />
-            <template v-else>
-              <DComboboxItem
-                v-for="item in filteredItems"
-                :key="item.value"
-                :value="item.value"
-                :label="item.label"
-              />
-            </template>
-          </ComboboxGroup>
-          <slot
-            name="footer"
-            :is-closing="isClosing"
-            :search-term="searchTerm"
-            :filtered-items="filteredItems"
-          />
-        </ComboboxViewport>
+          </ComboboxViewport>
+        </FocusScope>
       </ComboboxContent>
     </ComboboxPortal>
   </ComboboxRoot>
