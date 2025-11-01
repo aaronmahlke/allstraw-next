@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { XIcon } from "lucide-vue-next"
+import { XMarkIcon } from "@heroicons/vue/16/solid"
 import {
   ToastProvider,
   ToastRoot,
@@ -59,7 +59,7 @@ const buttonVariants: Record<string, string> = {
 <template>
   <ToastProvider swipeDirection="right">
     <ToastViewport
-      class="group fixed right-0 bottom-0 z-[2147483647] m-0 flex min-h-[200px] w-[390px] origin-bottom-right list-none flex-col gap-[10px] p-5 outline-none before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-[400px] before:content-[''] hover:min-h-[300px] hover:scale-100"
+      class="group fixed right-0 bottom-0 z-2147483647 m-0 flex min-h-[200px] w-[390px] origin-bottom-right list-none flex-col gap-[10px] p-5 outline-none before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-[400px] before:content-[''] hover:min-h-[300px] hover:scale-100"
     >
       <ToastRoot
         v-for="(toast, index) in toasts"
@@ -86,7 +86,7 @@ const buttonVariants: Record<string, string> = {
           </div>
           <ToastClose @click="removeToast(toast.id)">
             <DButton
-              :icon-left="XIcon"
+              :leading-icon="XMarkIcon"
               :variant="buttonVariants[toast.type]"
             />
           </ToastClose>

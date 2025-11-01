@@ -9,7 +9,7 @@ import {
   DialogTitle
 } from "reka-ui"
 
-import { X } from "lucide-vue-next"
+import { XMarkIcon } from "@heroicons/vue/16/solid"
 
 type Props = {
   open: boolean
@@ -58,12 +58,9 @@ function confirm() {
         :class="sizeClasses[size]"
       >
         <div>
-          <div
-            class="border-neutral flex items-start justify-between border-b p-5"
-            :class="[$slots.default ? 'border-b' : 'border-b-0']"
-          >
+          <div class="flex items-start justify-between p-5">
             <div>
-              <DialogTitle class="text-lg font-semibold text-neutral-900">
+              <DialogTitle class="text-neutral text-lg font-semibold">
                 {{ title }}
               </DialogTitle>
               <DialogDescription
@@ -77,7 +74,7 @@ function confirm() {
               <DButton
                 variant="transparent"
                 size="sm"
-                :icon-left="X"
+                :leading-icon="XMarkIcon"
               />
             </DialogClose>
           </div>
@@ -86,7 +83,7 @@ function confirm() {
             <slot />
           </div>
           <div>
-            <div class="flex justify-end space-x-2 rounded-b border-t border-neutral-200 p-4">
+            <div class="flex justify-end space-x-2 rounded-b p-4">
               <DButton
                 id="cancel"
                 variant="secondary"

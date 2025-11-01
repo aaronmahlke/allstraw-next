@@ -6,7 +6,7 @@ import { refDebounced } from "@vueuse/core"
 const slots = useSlots()
 
 type Props = {
-  variant?: "primary" | "secondary" | "transparent"
+  variant?: "primary" | "secondary" | "transparent" | "danger"
   leadingIcon?: Component
   trailingIcon?: Component
   to?: "string"
@@ -24,7 +24,8 @@ const variantClasses: { [key: string]: string } = {
   secondary:
     "bg-neutral-subtle text-neutral hover:bg-neutral-strong active:bg-neutral border border-transparent",
   transparent:
-    "text-neutral-700 hover:bg-neutral-subtle active:bg-neutral-strong border border-transparent"
+    "text-neutral-subtle hover:bg-surface-subtle active:bg-surface-strong border border-transparent",
+  danger: "bg-danger text-danger-onsurface hover:bg-danger-hover border border-danger shadow-xs"
 }
 
 const paddingClasses: { [key: string]: string } = {
@@ -61,11 +62,14 @@ const isLoading = refDebounced(toRef(props, "loading"), 100)
     :is="to ? NuxtLink : 'button'"
     :type
     :to
-    class="relative flex shrink-0 cursor-default items-center justify-center gap-2 rounded-lg text-sm whitespace-pre ring-blue-600 outline-none select-none focus-visible:ring-2 focus-visible:ring-offset-2"
+    class="relative shrink-0 cursor-default gap-2 rounded-lg text-sm whitespace-pre ring-blue-600 outline-none select-none focus-visible:ring-2 focus-visible:ring-offset-2"
     :class="[sizeClass, variantClasses[variant], disabled ? 'pointer-events-none opacity-50' : '']"
     :disabled
   >
-    <div :class="{ 'opacity-0': isLoading }">
+    <div
+      :class="{ 'opacity-0': isLoading }"
+      class="flex items-center justify-center"
+    >
       <component
         v-if="leadingIcon"
         :is="leadingIcon"

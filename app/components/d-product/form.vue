@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PlusIcon } from "lucide-vue-next"
-import type { DProductCreate } from "~/types/models"
+import type { DProductCreate, DCarrier } from "~/types/models"
 
 type ProductFormData = DProductCreate
 type DimensionType = "width" | "height" | "depth"
@@ -17,6 +17,14 @@ const emit = defineEmits<{
   "update:modelValue": [value: ProductFormData]
   validate: [errors: string[]]
 }>()
+
+const { data: carriersData } = await useFetch<{ carriers: DCarrier[] }>("/api/carriers")
+const carriers = carriersData.value?.carriers || []
+
+const carrierOptions = carriers.map((carrier) => ({
+  label: `${carrier.name} (€${(carrier.basePrice / 100).toFixed(2)})`,
+  value: carrier.id
+}))
 
 function updateField<K extends keyof ProductFormData>(key: K, value: ProductFormData[K]) {
   emit("update:modelValue", { ...product, [key]: value })
@@ -272,6 +280,17 @@ defineExpose({
             :min="0"
             :disabled="loading"
             leading="€"
+          />
+        </DFormGroup>
+
+        <DFormGroup>
+          <DFormLabel name="carrier">Carrier</DFormLabel>
+          <DCombobox
+            :model-value="product.carrierId"
+            @update:model-value="updateField('carrierId', $event)"
+            :items="carrierOptions"
+            placeholder="Select carrier..."
+            :disabled="loading"
           />
         </DFormGroup>
       </div>

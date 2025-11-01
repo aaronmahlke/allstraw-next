@@ -1,4 +1,4 @@
-import { carriers } from "~~/server/database/schema"
+import { carriers, products } from "~~/server/database/schema"
 import { eq, and } from "drizzle-orm"
 
 export default defineEventHandler(async (event) => {
@@ -18,19 +18,22 @@ export default defineEventHandler(async (event) => {
   const [existingCarrier] = await useDrizzle()
     .select({ id: carriers.id })
     .from(carriers)
-    .where(and(
-      eq(carriers.id, carrierId),
-      eq(carriers.organisationId, secure.organisationId)
-    ))
+    .where(and(eq(carriers.id, carrierId), eq(carriers.organisationId, secure.organisationId)))
 
   if (!existingCarrier) {
     throw createError({ statusCode: 404, statusMessage: "Carrier not found" })
   }
 
-  // Delete the carrier
+  // Remove carrier reference from products before deletion
   await useDrizzle()
-    .delete(carriers)
-    .where(eq(carriers.id, carrierId))
+    .update(products)
+    .set({ carrierId: null })
+    .where(
+      and(eq(products.carrierId, carrierId), eq(products.organisationId, secure.organisationId))
+    )
+
+  // Delete the carrier
+  await useDrizzle().delete(carriers).where(eq(carriers.id, carrierId))
 
   return { success: true }
 })

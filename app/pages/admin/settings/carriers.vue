@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PlusIcon, TrashIcon, EditIcon } from "lucide-vue-next"
+import { PlusIcon, TrashIcon, PencilSquareIcon } from "@heroicons/vue/16/solid"
 import type { DCarrier } from "~/types/models"
 
 definePageMeta({ layout: "admin" })
@@ -13,6 +13,10 @@ const { data: carriers, refresh } = await useFetch<{ carriers: DCarrier[] }>("/a
 const isModalOpen = ref(false)
 const editingId = ref<string | null>(null)
 const isSubmitting = ref(false)
+
+// Delete dialog state
+const isDeleteDialogOpen = ref(false)
+const carrierToDelete = ref<DCarrier | null>(null)
 
 const formData = ref({
   name: "",
@@ -110,18 +114,26 @@ async function saveCarrier() {
   }
 }
 
-async function deleteCarrier(carrier: DCarrier) {
-  if (!confirm(`Are you sure you want to delete ${carrier.name}?`)) {
-    return
-  }
+function openDeleteDialog(carrier: DCarrier) {
+  carrierToDelete.value = carrier
+  isDeleteDialogOpen.value = true
+}
+
+function closeDeleteDialog() {
+  isDeleteDialogOpen.value = false
+  carrierToDelete.value = null
+}
+
+async function confirmDelete() {
+  if (!carrierToDelete.value) return
 
   try {
-    await $fetch(`/api/carriers/${carrier.id}`, {
+    await $fetch(`/api/carriers/${carrierToDelete.value.id}`, {
       method: "DELETE"
     })
     toast.success({
       title: "Carrier Deleted",
-      description: `${carrier.name} has been deleted successfully`
+      description: `${carrierToDelete.value.name} has been deleted successfully`
     })
     refresh()
   } catch (error) {
@@ -130,6 +142,8 @@ async function deleteCarrier(carrier: DCarrier) {
       title: "Delete Failed",
       description: "Failed to delete carrier. Please try again."
     })
+  } finally {
+    closeDeleteDialog()
   }
 }
 </script>
@@ -144,7 +158,7 @@ async function deleteCarrier(carrier: DCarrier) {
         </p>
       </div>
       <DButton
-        :icon-left="PlusIcon"
+        :leading-icon="PlusIcon"
         @click="openCreateModal"
       >
         Add Carrier
@@ -152,42 +166,38 @@ async function deleteCarrier(carrier: DCarrier) {
     </div>
 
     <!-- Carriers List -->
-    <div
-      v-if="carriers?.carriers && carriers.carriers.length > 0"
-      class="space-y-3"
-    >
-      <div
+    <DList v-if="carriers?.carriers && carriers.carriers.length > 0">
+      <DListItem
         v-for="carrier in carriers.carriers"
         :key="carrier.id"
-        class="border-neutral bg-surface flex items-center justify-between rounded-lg border p-4"
       >
-        <div>
-          <h3 class="text-copy-lg text-neutral-strong font-medium">
-            {{ carrier.name }}
-          </h3>
-          <p class="text-copy-sm text-neutral-subtle">
-            Base price: €{{ (carrier.basePrice / 100).toFixed(2) }}
-          </p>
-        </div>
+        <div class="flex w-full items-center justify-between">
+          <div class="flex-1">
+            <h3 class="text-copy-lg text-neutral-strong font-medium">
+              {{ carrier.name }}
+            </h3>
+            <p class="text-copy-sm text-neutral-subtle">
+              Base price: €{{ (carrier.basePrice / 100).toFixed(2) }}
+            </p>
+          </div>
 
-        <div class="flex gap-2">
-          <DButton
-            variant="secondary"
-            :icon-left="EditIcon"
-            @click="openEditModal(carrier)"
-          >
-            Edit
-          </DButton>
-          <DButton
-            variant="secondary"
-            :icon-left="TrashIcon"
-            @click="deleteCarrier(carrier)"
-          >
-            Delete
-          </DButton>
+          <div class="flex gap-2">
+            <DButton
+              variant="secondary"
+              :leading-icon="PencilSquareIcon"
+              @click="openEditModal(carrier)"
+            >
+              Edit
+            </DButton>
+            <DButton
+              variant="transparent"
+              @click="openDeleteDialog(carrier)"
+              :leading-icon="TrashIcon"
+            ></DButton>
+          </div>
         </div>
-      </div>
-    </div>
+      </DListItem>
+    </DList>
 
     <DEmpty
       v-else
@@ -205,7 +215,7 @@ async function deleteCarrier(carrier: DCarrier) {
       @close="closeModal"
       @confirm="saveCarrier"
     >
-      <div class="space-y-4 p-6">
+      <div class="space-y-4 px-4 py-2">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <DFormGroup>
             <DFormLabel
@@ -242,5 +252,16 @@ async function deleteCarrier(carrier: DCarrier) {
         </div>
       </div>
     </DModal>
+
+    <!-- Delete Confirmation Dialog -->
+    <DDialog
+      :open="isDeleteDialogOpen"
+      :title="`Delete ${carrierToDelete?.name}`"
+      description="Are you sure you want to delete this carrier? This action cannot be undone."
+      confirm-text="Delete"
+      danger
+      @close="closeDeleteDialog"
+      @confirm="confirmDelete"
+    />
   </div>
 </template>
