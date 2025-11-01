@@ -1,0 +1,134 @@
+<script setup lang="ts">
+type Props = {
+  name?: string
+  type?: "text" | "password" | "email" | "number" | "tel" | "date" | "datetime-local" | "url"
+  required?: boolean
+  placeholder?: string
+  autocomplete?: string
+  label?: string
+  disabled?: boolean
+  hideArrows?: boolean
+  leading?: string
+  leadingBackground?: boolean
+  trailing?: string
+  trailingBackground?: boolean
+  min?: number
+  max?: number
+  step?: number
+  formatError?: (min: number | null, max: number | null) => string
+}
+
+const props = defineProps<Props>()
+
+const emit = defineEmits<{
+  error: [message: string]
+}>()
+
+const defaultFormat = (min?: number, max?: number) => {
+  if (min !== undefined && max !== undefined) return `Value must be between ${min} and ${max}`
+  if (min !== undefined) return `Value must be at least ${min}`
+  if (max !== undefined) return `Value must not exceed ${max}`
+  return ""
+}
+
+function validateInput(value: string | number) {
+  if (props.type === "number") {
+    const num = Number(value)
+    if (
+      (props.min !== undefined && num < props.min) ||
+      (props.max !== undefined && num > props.max)
+    ) {
+      errorMessage.value =
+        props.formatError?.(props.min || null, props.max || null) ??
+        defaultFormat(props.min, props.max)
+      return
+    }
+  }
+  errorMessage.value = ""
+}
+
+const errorMessage = ref("")
+
+const [model, modifiers] = defineModel<string | number>({
+  set(value) {
+    validateInput(value)
+    if (modifiers.capitalize && typeof value === "string") {
+      return value.charAt(0).toUpperCase() + value.slice(1)
+    }
+    if (modifiers.sanitize && typeof value === "string") {
+      return value
+        .toLowerCase()
+        .replace(/ /g, "-")
+        .replace(/[^a-z0-9-]/g, "")
+    }
+    if (modifiers.slug && typeof value === "string") {
+      return value
+        .toLowerCase()
+        .replace(/ /g, "-")
+        .replace(/[^a-z0-9-/]/g, "")
+        .replace(/--+/g, "-")
+    }
+
+    return value
+  }
+})
+</script>
+
+<template>
+  <div>
+    <div
+      class="bg-neutral border-neutral text-neutral text-copy has-[:focus]:bg-neutral flex h-9 overflow-hidden rounded-lg border leading-none transition-all outline-none has-[:focus]:border-blue-600 has-[:focus]:ring-2 has-[:focus]:ring-blue-300"
+      :class="[
+        disabled ? 'cursor-not-allowed bg-neutral-100 opacity-50' : 'hover:border-neutral-strong/30'
+      ]"
+    >
+      <div
+        v-if="$slots.leading || leading"
+        class="border-neutral flex items-center border-r px-4 whitespace-nowrap"
+        :class="leadingBackground ? 'bg-neutral-subtle' : ''"
+      >
+        <template v-if="leading">
+          {{ leading }}
+        </template>
+        <template v-else>
+          <slot name="leading"></slot>
+        </template>
+      </div>
+      <input
+        :id="name"
+        :name="name"
+        :type="type"
+        :required="required"
+        :placeholder="placeholder"
+        :autocomplete="autocomplete"
+        :label="label"
+        :disabled="disabled"
+        :min="min"
+        :max="max"
+        :step="step"
+        v-model="model"
+        class="text-copy texte-neutral h-full w-full px-2.5 outline-none"
+        :class="[hideArrows ? 'hide-arrows' : '']"
+      />
+
+      <div
+        v-if="$slots.trailing || trailing"
+        class="border-neutral flex items-center border-l px-3 whitespace-nowrap"
+        :class="trailingBackground ? 'bg-neutral-subtle' : ''"
+      >
+        <template v-if="trailing">
+          {{ trailing }}
+        </template>
+        <template v-else>
+          <slot name="trailing"></slot>
+        </template>
+      </div>
+    </div>
+    <p
+      v-if="errorMessage"
+      class="mt-1 text-sm text-red-500"
+    >
+      {{ errorMessage }}
+    </p>
+  </div>
+</template>
