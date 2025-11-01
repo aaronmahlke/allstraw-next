@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PlusIcon, TrashIcon } from "@heroicons/vue/16/solid"
+import { PlusIcon, TrashIcon, PencilSquareIcon } from "@heroicons/vue/16/solid"
 import type { DUser, DCompany } from "~/types/models"
 
 definePageMeta({ layout: "admin" })
@@ -7,7 +7,7 @@ definePageMeta({ layout: "admin" })
 const { toast } = useToast()
 
 const { data: customers, refresh } = await useFetch<{ customers: DUser[] }>("/api/customers")
-const { data: companiesData } = await useFetch<{ companies: DCompany[] }>("/api/companies")
+const { data: companiesData, refresh: refreshCompanies } = await useFetch<{ companies: DCompany[] }>("/api/companies")
 
 const companiesMap = computed(() => {
   const map = new Map<string, string>()
@@ -28,7 +28,18 @@ const editingId = ref<string | null>(null)
 const isSubmitting = ref(false)
 const customerToDelete = ref<DUser | null>(null)
 
-const formData = ref({
+// Company edit modal state
+const isCompanyModalOpen = ref(false)
+const editingCompanyId = ref<string | null>(null)
+
+const formData = ref<{
+  name: string
+  surname: string
+  email: string
+  phone: string
+  role: string
+  companyId: string | null
+}>({
   name: "",
   surname: "",
   email: "",
@@ -57,7 +68,7 @@ function openEditModal(customer: DUser) {
     email: customer.email,
     phone: customer.phone || "",
     role: customer.role,
-    companyId: customer.companyId
+    companyId: customer.companyId || null
   }
   editingId.value = customer.id
   isModalOpen.value = true
@@ -106,7 +117,7 @@ async function saveCustomer() {
   if (errors.length > 0) {
     toast.error({
       title: "Validation Error",
-      description: errors[0]
+      description: errors[0] || "Please fix the errors in the form"
     })
     return
   }
@@ -178,6 +189,27 @@ async function confirmDelete() {
     closeDeleteDialog()
   }
 }
+
+// Company edit functions
+function openCompanyEditModal() {
+  const companyId = formData.value.companyId
+  if (!companyId) return
+
+  const company = companiesData.value?.companies.find((c) => c.id === companyId)
+  if (!company) return
+
+  editingCompanyId.value = companyId
+  isCompanyModalOpen.value = true
+}
+
+function closeCompanyModal() {
+  isCompanyModalOpen.value = false
+  editingCompanyId.value = null
+}
+
+function handleCompanySaved() {
+  refreshCompanies()
+}
 </script>
 
 <template>
@@ -246,74 +278,105 @@ async function confirmDelete() {
 
     <DModal
       :key="`customer-modal-${editingId || 'new'}`"
-      :open="isModalOpen"
-      :title="editingId ? 'Edit Customer' : 'Add New Customer'"
-      :confirmText="editingId ? 'Update Customer' : 'Create Customer'"
-      @close="closeModal"
-      @confirm="saveCustomer"
+      v-model:open="isModalOpen"
     >
-      <div class="space-y-4 p-6">
-        <DFormGroup>
-          <DFormLabel name="company">Company</DFormLabel>
-          <DCompanyCombobox
-            v-model="formData.companyId"
-            :disabled="isSubmitting"
-          />
-        </DFormGroup>
+      <DModalContent>
+        <DModalHeader>
+          <DModalTitle>
+            {{ editingId ? 'Edit Customer' : 'Add New Customer' }}
+          </DModalTitle>
+        </DModalHeader>
 
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div class="space-y-4 p-6">
+          <DFormGroup>
+            <DFormLabel name="company">Company</DFormLabel>
+            <div class="flex items-start gap-2">
+              <div class="flex-1">
+                <DCompanyCombobox
+                  v-model="formData.companyId"
+                  :disabled="isSubmitting"
+                />
+              </div>
+              <DButton
+                v-if="formData.companyId"
+                variant="secondary"
+                :leading-icon="PencilSquareIcon"
+                :disabled="isSubmitting"
+                @click="openCompanyEditModal"
+              />
+            </div>
+          </DFormGroup>
+
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <DFormGroup>
+              <DFormLabel
+                required
+                name="name"
+              >
+                First Name
+              </DFormLabel>
+              <DInput
+                v-model="formData.name"
+                placeholder="John"
+                :disabled="isSubmitting"
+                required
+              />
+            </DFormGroup>
+
+            <DFormGroup>
+              <DFormLabel name="surname">Last Name</DFormLabel>
+              <DInput
+                v-model="formData.surname"
+                placeholder="Doe"
+                :disabled="isSubmitting"
+              />
+            </DFormGroup>
+          </div>
+
           <DFormGroup>
             <DFormLabel
               required
-              name="name"
+              name="email"
             >
-              First Name
+              Email
             </DFormLabel>
             <DInput
-              v-model="formData.name"
-              placeholder="John"
+              v-model="formData.email"
+              type="email"
+              placeholder="john.doe@example.com"
               :disabled="isSubmitting"
               required
             />
           </DFormGroup>
 
-          <DFormGroup>
-            <DFormLabel name="surname">Last Name</DFormLabel>
-            <DInput
-              v-model="formData.surname"
-              placeholder="Doe"
-              :disabled="isSubmitting"
-            />
-          </DFormGroup>
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <DFormGroup>
+              <DFormLabel name="phone">Phone</DFormLabel>
+              <DInput
+                v-model="formData.phone"
+                placeholder="+1 234 567 8900"
+                :disabled="isSubmitting"
+              />
+            </DFormGroup>
+          </div>
         </div>
 
-        <DFormGroup>
-          <DFormLabel
-            required
-            name="email"
+        <DModalFooter v-slot="{ close }">
+          <DButton
+            variant="secondary"
+            @click="close"
           >
-            Email
-          </DFormLabel>
-          <DInput
-            v-model="formData.email"
-            type="email"
-            placeholder="john.doe@example.com"
+            Cancel
+          </DButton>
+          <DButton
+            variant="primary"
             :disabled="isSubmitting"
-            required
-          />
-        </DFormGroup>
-
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <DFormGroup>
-            <DFormLabel name="phone">Phone</DFormLabel>
-            <DInput
-              v-model="formData.phone"
-              placeholder="+1 234 567 8900"
-              :disabled="isSubmitting"
-            />
-          </DFormGroup>
-        </div>
-      </div>
+            @click="saveCustomer"
+          >
+            {{ editingId ? 'Update Customer' : 'Create Customer' }}
+          </DButton>
+        </DModalFooter>
+      </DModalContent>
     </DModal>
 
     <DDialog
@@ -324,6 +387,13 @@ async function confirmDelete() {
       danger
       @close="closeDeleteDialog"
       @confirm="confirmDelete"
+    />
+
+    <!-- Nested Company Edit Modal -->
+    <DCompanyEditModal
+      v-model:open="isCompanyModalOpen"
+      :company-id="editingCompanyId"
+      @saved="handleCompanySaved"
     />
   </div>
 </template>

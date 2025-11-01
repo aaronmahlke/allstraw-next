@@ -256,66 +256,86 @@ async function updateUserRole(userId: string, newRole: string) {
 
     <DModal
       :key="`user-modal-${editingId || 'new'}`"
-      :open="isModalOpen"
-      :title="editingId ? 'Edit User' : 'Add New User'"
-      :confirmText="editingId ? 'Update User' : 'Create User'"
-      @close="closeModal"
-      @confirm="saveUser"
+      v-model:open="isModalOpen"
     >
-      <div class="space-y-4 p-6">
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <DModalContent>
+        <DModalHeader>
+          <DModalTitle>
+            {{ editingId ? 'Edit User' : 'Add New User' }}
+          </DModalTitle>
+        </DModalHeader>
+
+        <div class="space-y-4 p-6">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <DFormGroup>
+              <DFormLabel
+                required
+                name="name"
+              >
+                First Name
+              </DFormLabel>
+              <DInput
+                v-model="formData.name"
+                placeholder="John"
+                :disabled="isSubmitting"
+                required
+              />
+            </DFormGroup>
+
+            <DFormGroup>
+              <DFormLabel name="surname">Last Name</DFormLabel>
+              <DInput
+                v-model="formData.surname"
+                placeholder="Doe"
+                :disabled="isSubmitting"
+              />
+            </DFormGroup>
+          </div>
+
           <DFormGroup>
             <DFormLabel
               required
-              name="name"
+              name="email"
             >
-              First Name
+              Email
             </DFormLabel>
             <DInput
-              v-model="formData.name"
-              placeholder="John"
+              v-model="formData.email"
+              type="email"
+              placeholder="john.doe@example.com"
               :disabled="isSubmitting"
               required
             />
           </DFormGroup>
 
-          <DFormGroup>
-            <DFormLabel name="surname">Last Name</DFormLabel>
-            <DInput
-              v-model="formData.surname"
-              placeholder="Doe"
-              :disabled="isSubmitting"
-            />
-          </DFormGroup>
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <DFormGroup>
+              <DFormLabel name="phone">Phone</DFormLabel>
+              <DInput
+                v-model="formData.phone"
+                placeholder="+1 234 567 8900"
+                :disabled="isSubmitting"
+              />
+            </DFormGroup>
+          </div>
         </div>
 
-        <DFormGroup>
-          <DFormLabel
-            required
-            name="email"
+        <DModalFooter v-slot="{ close }">
+          <DButton
+            variant="secondary"
+            @click="close"
           >
-            Email
-          </DFormLabel>
-          <DInput
-            v-model="formData.email"
-            type="email"
-            placeholder="john.doe@example.com"
+            Cancel
+          </DButton>
+          <DButton
+            variant="primary"
             :disabled="isSubmitting"
-            required
-          />
-        </DFormGroup>
-
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <DFormGroup>
-            <DFormLabel name="phone">Phone</DFormLabel>
-            <DInput
-              v-model="formData.phone"
-              placeholder="+1 234 567 8900"
-              :disabled="isSubmitting"
-            />
-          </DFormGroup>
-        </div>
-      </div>
+            @click="saveUser"
+          >
+            {{ editingId ? 'Update User' : 'Create User' }}
+          </DButton>
+        </DModalFooter>
+      </DModalContent>
     </DModal>
 
     <DDialog

@@ -22,9 +22,14 @@ const emit = defineEmits<{
   confirm: []
 }>()
 
-function close() {
-  emit("close")
-}
+const isOpen = computed({
+  get: () => open,
+  set: (value) => {
+    if (!value) {
+      emit("close")
+    }
+  }
+})
 
 function confirm() {
   emit("confirm")
@@ -33,19 +38,40 @@ function confirm() {
 
 <template>
   <DModal
-    :open="open"
-    :title="title"
-    :description="description"
-    :confirm-text="confirmText"
-    :danger="danger"
-    @close="close"
-    @confirm="confirm"
+    v-model:open="isOpen"
   >
-    <div
-      v-if="!description"
-      class="px-6 py-4"
-    >
-      <slot></slot>
-    </div>
+    <DModalContent>
+      <DModalHeader>
+        <DModalTitle>
+          {{ title }}
+        </DModalTitle>
+        <DModalDescription v-if="description">
+          {{ description }}
+        </DModalDescription>
+      </DModalHeader>
+
+      <div
+        v-if="!description && $slots.default"
+        class="px-6 py-4"
+      >
+        <slot />
+      </div>
+      <slot v-else />
+
+      <DModalFooter v-slot="{ close }">
+        <DButton
+          variant="secondary"
+          @click="close"
+        >
+          {{ cancelText }}
+        </DButton>
+        <DButton
+          :variant="danger ? 'danger' : 'primary'"
+          @click="confirm"
+        >
+          {{ confirmText }}
+        </DButton>
+      </DModalFooter>
+    </DModalContent>
   </DModal>
 </template>

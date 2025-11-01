@@ -209,48 +209,68 @@ async function confirmDelete() {
 
     <!-- Create/Edit Modal -->
     <DModal
-      :open="isModalOpen"
-      :title="editingId ? 'Edit Carrier' : 'Add New Carrier'"
-      :confirmText="editingId ? 'Update Carrier' : 'Create Carrier'"
-      @close="closeModal"
-      @confirm="saveCarrier"
+      v-model:open="isModalOpen"
     >
-      <div class="space-y-4 px-4 py-2">
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <DFormGroup>
-            <DFormLabel
-              required
-              name="name"
-            >
-              Carrier Name
-            </DFormLabel>
-            <DInput
-              v-model="formData.name"
-              placeholder="e.g., DHL Express"
-              :disabled="isSubmitting"
-              required
-            />
-          </DFormGroup>
+      <DModalContent>
+        <DModalHeader>
+          <DModalTitle>
+            {{ editingId ? 'Edit Carrier' : 'Add New Carrier' }}
+          </DModalTitle>
+        </DModalHeader>
 
-          <DFormGroup>
-            <DFormLabel
-              required
-              name="basePrice"
-            >
-              Base Price
-            </DFormLabel>
-            <DInput
-              type="number"
-              v-model="basePriceEur"
-              placeholder="0.00"
-              :step="0.01"
-              :min="0"
-              :disabled="isSubmitting"
-              leading="€"
-            />
-          </DFormGroup>
+        <div class="space-y-4 px-4 py-2">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <DFormGroup>
+              <DFormLabel
+                required
+                name="name"
+              >
+                Carrier Name
+              </DFormLabel>
+              <DInput
+                v-model="formData.name"
+                placeholder="e.g., DHL Express"
+                :disabled="isSubmitting"
+                required
+              />
+            </DFormGroup>
+
+            <DFormGroup>
+              <DFormLabel
+                required
+                name="basePrice"
+              >
+                Base Price
+              </DFormLabel>
+              <DInput
+                type="number"
+                v-model="basePriceEur"
+                placeholder="0.00"
+                :step="0.01"
+                :min="0"
+                :disabled="isSubmitting"
+                leading="€"
+              />
+            </DFormGroup>
+          </div>
         </div>
-      </div>
+
+        <DModalFooter v-slot="{ close }">
+          <DButton
+            variant="secondary"
+            @click="close"
+          >
+            Cancel
+          </DButton>
+          <DButton
+            variant="primary"
+            :disabled="isSubmitting"
+            @click="saveCarrier"
+          >
+            {{ editingId ? 'Update Carrier' : 'Create Carrier' }}
+          </DButton>
+        </DModalFooter>
+      </DModalContent>
     </DModal>
 
     <!-- Delete Confirmation Dialog -->
